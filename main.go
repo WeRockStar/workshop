@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/globalsign/mgo/bson"
+	"github.com/spf13/viper"
 
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo"
@@ -11,9 +14,17 @@ import (
 )
 
 func main() {
-	e := echo.New()
 
-	session, err := mgo.Dial("root:example@13.250.119.252")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	mongoHost := viper.GetString("mongo.host")
+	mongoUser := viper.GetString("mongo.user")
+	mongoPass := viper.GetString("mongo.pass")
+	port := ":" + viper.GetString("port")
+
+	e := echo.New()
+	connString := fmt.Sprintf("%v:%v@%v", mongoUser, mongoPass, mongoHost)
+	session, err := mgo.Dial(connString)
 	if err != nil {
 		e.Logger.Fatal(err)
 		return
@@ -29,7 +40,7 @@ func main() {
 	e.PUT("/todos/:id", h.done)
 	e.GET("/todos/:id", h.view)
 	e.DELETE("/todos/:id", h.delete)
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(port))
 }
 
 type handler struct {
