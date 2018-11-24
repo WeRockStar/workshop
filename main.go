@@ -28,6 +28,7 @@ func main() {
 	e.POST("/todos", h.create)
 	e.PUT("/todos/:id", h.done)
 	e.GET("/todos/:id", h.view)
+	e.DELETE("/todos/:id", h.delete)
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
@@ -39,6 +40,20 @@ type todo struct {
 	ID    bson.ObjectId `json:"id" bson:"_id"`
 	Topic string        `json:"topic" bson:"topic"`
 	Done  bool          `json:"done" bson:"done"`
+}
+
+func (h *handler) delete(c echo.Context) error {
+	session := h.m.Copy()
+	defer session.Close()
+
+	id := bson.ObjectIdHex(c.Param("id"))
+	col := session.DB("workshop").C("todos")
+	if err := col.RemoveId(id); err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, echo.Map{
+		"result": "success",
+	})
 }
 
 func (h *handler) done(c echo.Context) error {
